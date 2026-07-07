@@ -200,23 +200,57 @@ app.get('/api/admin/enquiries', requireAdmin, (req, res) => {
   res.json({ enquiries: enquiries.list(500) });
 });
 
-/* --------------------------- pages --------------------------- */
+/* --------------------------- marketing pages (server-rendered) --------------------------- */
 
-const page = (file) => (req, res) => res.sendFile(path.join(PUBLIC_DIR, file));
+const pages = require('./views/pages');
+const { SITE } = require('./views/data');
+const send = (html) => (req, res) => res.type('html').send(html());
 
-app.get('/', page('index.html'));
-app.get('/login', page('login.html'));
-app.get('/register', page('register.html'));
-app.get('/dashboard', page('dashboard.html'));
-app.get('/admin', page('admin.html'));
-app.get('/privacy', page('privacy.html'));
-app.get('/terms', page('terms.html'));
+app.get('/', send(pages.home));
+app.get('/services', send(pages.services));
+app.get('/work', send(pages.work));
+app.get('/packages', send(pages.packages));
+app.get('/process', send(pages.process));
+app.get('/faq', send(pages.faq));
+app.get('/news', send(pages.newsIndex));
+app.get('/news/:slug', (req, res, next) => {
+  const html = pages.article(req.params.slug);
+  if (!html) return next();
+  res.type('html').send(html);
+});
+app.get('/book', send(pages.book));
+app.get('/contact', send(pages.contact));
+
+/* --------------------------- portal pages (static) --------------------------- */
+
+const file = (name) => (req, res) => res.sendFile(path.join(PUBLIC_DIR, name));
+app.get('/login', file('login.html'));
+app.get('/register', file('register.html'));
+app.get('/dashboard', file('dashboard.html'));
+app.get('/admin', file('admin.html'));
+app.get('/privacy', file('privacy.html'));
+app.get('/terms', file('terms.html'));
+
+/* --------------------------- SEO helpers --------------------------- */
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /admin\n\nSitemap: ${SITE.baseUrl}/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const urls = ['/', '/services', '/work', '/packages', '/process', '/faq', '/news', '/book', '/contact', '/privacy', '/terms']
+    .concat(pages.NEWS.map((n) => '/news/' + n.slug));
+  const body = urls
+    .map((u) => `  <url><loc>${SITE.baseUrl}${u === '/' ? '/' : u}</loc><changefreq>weekly</changefreq></url>`)
+    .join('\n');
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`);
+});
 
 app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
 
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
-  res.status(404).sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  res.status(404).type('html').send(pages.home());
 });
 
 app.listen(PORT, () => {

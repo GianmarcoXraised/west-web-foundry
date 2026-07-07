@@ -1,11 +1,11 @@
 :root{
-  --ink:#15171B; --steel:#22252C; --steel-2:#2C3038;
-  --mist:#F1F2F4; --paper:#FAFBFC; --line:#D8DBE0; --line-dark:#3A3F49;
-  --molten-1:#FFA24A; --molten-2:#E4560A; --copper:#C4520B;
-  --txt:#2A2D33; --txt-soft:#5A5F68; --txt-inv:#EDEFF2; --txt-inv-soft:#A6ACB6;
-  --green:#1E9E62; --green-bg:#E7F6EE; --red:#C6392B; --red-bg:#FBEAE8; --amber:#B26B00; --amber-bg:#FCF1DC;
-  --radius:10px;
-  --display:'Zilla Slab',Georgia,serif;
+  --ink:#22160C; --steel:#3A2413; --steel-2:#4A3020;
+  --mist:#FFF7EF; --paper:#FFFBF6; --line:#EAD9C6; --line-dark:#5A3D28;
+  --molten-1:#FF8A2B; --molten-2:#E4560A; --copper:#C4470A;
+  --txt:#3A2A1C; --txt-soft:#7A6656; --txt-inv:#FFF3E8; --txt-inv-soft:#F4D3B6;
+  --green:#1E7A4C; --green-bg:#E7F6EE; --red:#C6392B; --red-bg:#FBEAE8; --amber:#B26B00; --amber-bg:#FCF1DC;
+  --radius:12px;
+  --display:'Fraunces',Georgia,serif;
   --body:'Public Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
@@ -16,7 +16,7 @@ h1,h2,h3{font-family:var(--display);line-height:1.12;letter-spacing:-.01em;color
 .mono{font-family:var(--mono)}
 
 /* top bar */
-.appbar{background:rgba(21,23,27,.96);border-bottom:1px solid var(--line-dark);position:sticky;top:0;z-index:40}
+.appbar{background:linear-gradient(120deg,#22160C,#3A2413);border-bottom:1px solid var(--line-dark);position:sticky;top:0;z-index:40}
 .appbar-inner{max-width:1120px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:11px;text-decoration:none}
 .logo-mark{width:32px;height:32px;border-radius:7px;background:linear-gradient(150deg,var(--molten-1),var(--molten-2));display:grid;place-items:center;font-family:var(--display);font-weight:700;color:#fff}
