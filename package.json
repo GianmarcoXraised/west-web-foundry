@@ -1,11 +1,20 @@
 {
   "name": "west-web-foundry",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "West Web Foundry — marketing site + client portal (contact, meeting booking, login, progress, invoices).",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "start": "serve -s . -l ${PORT:-3000}"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
-    "serve": "^14.2.4"
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
   }
 }

@@ -24,6 +24,7 @@
   --txt-soft:#5A5F68;
   --txt-inv:#EDEFF2;
   --txt-inv-soft:#A6ACB6;
+  --green:#1E9E62;--green-bg:#E7F6EE;
   --radius:10px;
   --display:'Zilla Slab',Georgia,serif;
   --body:'Public Sans',-apple-system,sans-serif;
@@ -66,6 +67,9 @@ h3{font-size:1.25rem;font-weight:600}
 .nav-links{display:flex;align-items:center;gap:30px;list-style:none}
 .nav-links a{color:var(--txt-inv-soft);text-decoration:none;font-size:.92rem;font-weight:500;transition:color .15s}
 .nav-links a:hover{color:#fff}
+.nav-cta{display:flex;align-items:center;gap:18px}
+.nav-login{color:var(--txt-inv-soft);text-decoration:none;font-size:.9rem;font-weight:600}
+.nav-login:hover{color:#fff}
 .nav .btn{padding:10px 18px;font-size:.88rem}
 .nav-toggle{display:none;background:none;border:1px solid var(--line-dark);border-radius:7px;color:var(--txt-inv);width:42px;height:42px;font-size:1.2rem;cursor:pointer}
 
@@ -149,6 +153,16 @@ h3{font-size:1.25rem;font-weight:600}
 .care-list li strong{color:#fff;font-weight:600;min-width:170px}
 .care-list li span{color:var(--txt-inv-soft);font-size:.92rem}
 
+/* ---------- book a meeting ---------- */
+.book{background:var(--mist)}
+.book-card{background:var(--ink);border-radius:16px;padding:52px 48px;color:var(--txt-inv);display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center;box-shadow:0 24px 60px rgba(21,23,27,.14);position:relative;overflow:hidden}
+.book-card::after{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 90% -20%,rgba(228,86,10,.22),transparent 60%);pointer-events:none}
+.book-card h2{color:#fff;margin-bottom:12px}
+.book-card p{color:var(--txt-inv-soft);max-width:46ch}
+.book-card .btn{white-space:nowrap;position:relative;z-index:1}
+.calendly-inline-widget{min-width:320px}
+#calendlyEmbed{margin-top:34px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+
 /* ---------- faq ---------- */
 .faq-list{max-width:760px;display:grid;gap:12px}
 .faq-list details{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px}
@@ -159,13 +173,17 @@ h3{font-size:1.25rem;font-weight:600}
 .faq-list details p{margin-top:14px;color:var(--txt-soft);font-size:.95rem}
 
 /* ---------- contact ---------- */
-.contact{background:var(--mist)}
+.contact{background:var(--paper)}
 .contact-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:60px}
 .form{display:grid;gap:16px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:32px}
 .form label{font-size:.85rem;font-weight:600;display:grid;gap:6px}
 .form input,.form select,.form textarea{font-family:var(--body);font-size:.95rem;padding:12px 14px;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--txt)}
 .form input:focus,.form select:focus,.form textarea:focus{outline:3px solid rgba(255,162,74,.5);border-color:var(--molten-2)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-note{border-radius:8px;padding:12px 14px;font-size:.9rem;display:none}
+.form-note.show{display:block}
+.form-note.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(30,158,98,.25)}
+.form-note.err{background:#FBEAE8;color:#C6392B;border:1px solid rgba(198,57,43,.25)}
 .contact-side p{color:var(--txt-soft);margin:18px 0 26px}
 .contact-side .mono{font-family:var(--mono);font-size:.9rem;color:var(--ink)}
 
@@ -174,7 +192,7 @@ h3{font-size:1.25rem;font-weight:600}
 .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
 .footer a{color:var(--txt-inv-soft);text-decoration:none}
 .footer a:hover{color:#fff}
-.footer nav{display:flex;gap:24px}
+.footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
 /* reveal */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
@@ -193,6 +211,7 @@ h3{font-size:1.25rem;font-weight:600}
   .pk-grid{grid-template-columns:repeat(2,1fr)}
   .steps{grid-template-columns:repeat(2,1fr);gap:36px 26px}
   .care-grid,.contact-grid{grid-template-columns:1fr;gap:40px}
+  .book-card{grid-template-columns:1fr;text-align:left;gap:26px}
 }
 @media (max-width:640px){
   .section{padding:68px 0}
@@ -200,10 +219,11 @@ h3{font-size:1.25rem;font-weight:600}
   .svc-grid,.pk-grid{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr}
   .form-row{grid-template-columns:1fr}
+  .book-card{padding:38px 26px}
   .nav-links{display:none;position:absolute;top:68px;left:0;right:0;background:var(--ink);flex-direction:column;padding:20px 24px;gap:18px;border-bottom:1px solid var(--line-dark)}
   .nav-links.open{display:flex}
   .nav-toggle{display:block}
-  .nav .btn{display:none}
+  .nav-cta .btn{display:none}
 }
 </style>
 </head>
@@ -219,10 +239,14 @@ h3{font-size:1.25rem;font-weight:600}
       <li><a href="#services">What we do</a></li>
       <li><a href="#packages">Packages</a></li>
       <li><a href="#process">Process</a></li>
+      <li><a href="#book">Book a call</a></li>
       <li><a href="#faq">FAQ</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
-    <a class="btn btn-molten" href="#packages">See packages</a>
+    <div class="nav-cta">
+      <a class="nav-login" href="/login">Client login</a>
+      <a class="btn btn-molten" href="#packages">See packages</a>
+    </div>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">☰</button>
   </div>
 </header>
@@ -239,7 +263,7 @@ h3{font-size:1.25rem;font-weight:600}
       <p class="lead">We design, build, host and look after your website — so you never have to. One upfront price, one small monthly fee, zero technical work on your side.</p>
       <div class="hero-ctas">
         <a class="btn btn-molten" href="#packages">See packages — from $890</a>
-        <a class="btn btn-ghost" href="#contact">Book a free call</a>
+        <a class="btn btn-ghost" href="#book">Book a free call</a>
       </div>
     </div>
     <aside class="plate reveal" aria-label="Included in every project">
@@ -410,6 +434,26 @@ h3{font-size:1.25rem;font-weight:600}
   </div>
 </section>
 
+<!-- BOOK A MEETING -->
+<section class="section book" id="book">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Book a meeting</span>
+      <h2>Grab a free 30-minute call</h2>
+      <p class="lead">Pick a time that suits you and we'll talk through your business, your goals and exactly what your website needs to do. No obligation, no jargon.</p>
+    </div>
+    <div class="book-card reveal">
+      <div>
+        <h2 style="font-size:1.7rem">Ready when you are</h2>
+        <p>Choose a slot on our calendar and you'll get an instant confirmation. Prefer to write first? Use the contact form just below.</p>
+      </div>
+      <a class="btn btn-molten" id="bookCta" href="#contact">Choose a time →</a>
+    </div>
+    <!-- Calendly inline embed appears here once a link is configured -->
+    <div id="calendlyEmbed"></div>
+  </div>
+</section>
+
 <!-- FAQ -->
 <section class="section" id="faq">
   <div class="wrap">
@@ -456,6 +500,7 @@ h3{font-size:1.25rem;font-weight:600}
       <p class="mono">hello@westwebfoundry.com</p>
     </div>
     <form class="form reveal" id="contactForm">
+      <div class="form-note" id="formNote"></div>
       <div class="form-row">
         <label>Your name
           <input type="text" name="name" required autocomplete="name">
@@ -479,7 +524,7 @@ h3{font-size:1.25rem;font-weight:600}
       <label>Anything else we should know?
         <textarea name="message" rows="4"></textarea>
       </label>
-      <button type="submit" class="btn btn-molten" style="justify-content:center">Send enquiry</button>
+      <button type="submit" class="btn btn-molten" id="contactSubmit" style="justify-content:center">Send enquiry</button>
       <p style="font-size:.8rem;color:var(--txt-soft);text-align:center">No spam, no pressure. Just a reply from a real person.</p>
     </form>
   </div>
@@ -493,8 +538,10 @@ h3{font-size:1.25rem;font-weight:600}
     <nav>
       <a href="#services">What we do</a>
       <a href="#packages">Packages</a>
-      <a href="#faq">FAQ</a>
-      <a href="#contact">Contact</a>
+      <a href="#book">Book a call</a>
+      <a href="/login">Client login</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
     </nav>
   </div>
 </footer>
@@ -528,14 +575,63 @@ document.querySelectorAll('[data-pkg]').forEach(btn=>{
   });
 });
 
-// contact form → email (swap action for Formspree/backend later)
-document.getElementById('contactForm').addEventListener('submit',e=>{
+// Book a meeting — wire up Calendly if a link is configured, else fall back to contact form
+(async function initBooking(){
+  let calendly='';
+  try{ calendly=(await (await fetch('/api/config')).json()).calendlyUrl||''; }catch(e){}
+  const cta=document.getElementById('bookCta');
+  if(calendly){
+    cta.href=calendly;
+    cta.target='_blank';
+    cta.rel='noopener';
+    // inline embed
+    const embed=document.getElementById('calendlyEmbed');
+    embed.className='calendly-inline-widget';
+    embed.setAttribute('data-url',calendly);
+    embed.style.minHeight='680px';
+    const css=document.createElement('link');
+    css.rel='stylesheet';css.href='https://assets.calendly.com/assets/external/widget.css';
+    document.head.appendChild(css);
+    const js=document.createElement('script');
+    js.src='https://assets.calendly.com/assets/external/widget.js';
+    js.async=true;
+    document.body.appendChild(js);
+  } else {
+    // No link yet: keep sending people to the contact form.
+    cta.href='#contact';
+  }
+})();
+
+// contact form → saved server-side via /api/contact
+const contactForm=document.getElementById('contactForm');
+const formNote=document.getElementById('formNote');
+const contactSubmit=document.getElementById('contactSubmit');
+contactForm.addEventListener('submit',async e=>{
   e.preventDefault();
-  const f=new FormData(e.target);
-  const body=encodeURIComponent(
-    `Name: ${f.get('name')}\nEmail: ${f.get('email')}\nBusiness: ${f.get('business')}\nPackage: ${f.get('package')}\n\n${f.get('message')||''}`
-  );
-  window.location.href=`mailto:hello@westwebfoundry.com?subject=${encodeURIComponent('Website enquiry — '+f.get('business'))}&body=${body}`;
+  formNote.className='form-note';
+  const f=new FormData(contactForm);
+  contactSubmit.disabled=true;contactSubmit.textContent='Sending…';
+  try{
+    const res=await fetch('/api/contact',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:f.get('name'),email:f.get('email'),
+        business:f.get('business'),package:f.get('package'),
+        message:f.get('message')||''
+      })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Something went wrong.');
+    formNote.textContent="Thanks — we've got your enquiry and will reply within one business day.";
+    formNote.classList.add('ok','show');
+    contactForm.reset();
+  }catch(err){
+    formNote.textContent=err.message;
+    formNote.classList.add('err','show');
+  }finally{
+    contactSubmit.disabled=false;contactSubmit.textContent='Send enquiry';
+  }
 });
 
 // scroll reveal (respects reduced motion via CSS)

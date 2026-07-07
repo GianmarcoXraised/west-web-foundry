@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — West Web Foundry</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="logo" href="/"><span class="logo-mark">W</span><span class="logo-name">West Web Foundry</span></a>
+    <div class="appbar-right"><a href="/">← Back to site</a></div>
+  </div>
+</header>
+
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <span class="eyebrow">Client portal</span>
+    <h1 style="margin-top:8px">Welcome back</h1>
+    <p class="sub">Sign in to see your project progress, invoices and account.</p>
+
+    <div class="msg err" id="msg"></div>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-molten" id="submitBtn">Sign in</button>
+    </form>
+
+    <p class="auth-alt">New client? <a href="/register">Create your account</a></p>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('loginForm');
+const msg = document.getElementById('msg');
+const btn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Sign in failed.');
+    window.location.href = data.user.role === 'admin' ? '/admin' : '/dashboard';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.classList.add('show');
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+});
+</script>
+</body>
+</html>

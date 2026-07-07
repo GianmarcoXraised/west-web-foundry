@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your project — West Web Foundry</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="logo" href="/"><span class="logo-mark">W</span><span class="logo-name">West Web Foundry</span></a>
+    <div class="appbar-right">
+      <a href="#" id="bookLink">Book a meeting</a>
+      <a href="#" id="logoutLink">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<main class="shell" id="shell" hidden>
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">Client portal</span>
+      <h1 id="hello">Your project</h1>
+    </div>
+    <a class="btn btn-molten btn-sm" href="#" id="bookBtn">Book a meeting</a>
+  </div>
+
+  <!-- stat tiles -->
+  <div class="grid grid-3" style="margin-bottom:22px">
+    <div class="stat">
+      <div class="k">Status</div>
+      <div class="v" id="statStatus">—</div>
+    </div>
+    <div class="stat">
+      <div class="k">Your website</div>
+      <a class="v" id="statUrl" href="#" target="_blank" rel="noopener">Not live yet</a>
+    </div>
+    <div class="stat">
+      <div class="k">Next payment</div>
+      <div class="v" id="statNext">—<small id="statFee"></small></div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <!-- progress -->
+    <section class="panel">
+      <h2>Build progress</h2>
+      <p class="hint" id="pkgLine">—</p>
+      <div class="progress-row">
+        <span class="mono muted" id="stageLabel">Progress</span>
+        <span class="pct" id="pctText">0%</span>
+      </div>
+      <div class="progress"><span id="progressBar" style="width:0%"></span></div>
+      <p class="muted" id="stageNote" style="margin-top:16px"></p>
+    </section>
+
+    <!-- account -->
+    <section class="panel">
+      <h2>Account &amp; billing</h2>
+      <p class="hint">The essentials for your care plan.</p>
+      <table>
+        <tbody>
+          <tr><th style="border:none">Package</th><td style="border:none" id="accPkg">—</td></tr>
+          <tr><th style="border:none">Care fee</th><td style="border:none" id="accFee">—</td></tr>
+          <tr><th style="border:none">Next payment due</th><td style="border:none" id="accNext">—</td></tr>
+          <tr><th style="border:none">Account email</th><td style="border:none" id="accEmail">—</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:16px">Need a change to your site? Email
+        <a href="mailto:hello@westwebfoundry.com" style="color:var(--copper)">hello@westwebfoundry.com</a>
+        or book a call above.</p>
+    </section>
+  </div>
+
+  <!-- invoices -->
+  <section class="panel" style="margin-top:22px">
+    <h2>Invoices</h2>
+    <p class="hint">Your billing history and anything currently due.</p>
+    <div class="table-wrap">
+      <table id="invTable">
+        <thead>
+          <tr><th>Invoice</th><th>Description</th><th>Issued</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="invEmpty" hidden>No invoices yet — you'll see them here as they're issued.</p>
+  </section>
+</main>
+
+<footer class="mini">West Web Foundry · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
+
+<script>
+const money = (amt, cur) => {
+  const sym = cur === 'GBP' ? '£' : '$';
+  return sym + Number(amt || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmtDate = (s) => {
+  if (!s) return '—';
+  const d = new Date(s);
+  return isNaN(d) ? esc(s) : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+let CALENDLY = '';
+
+async function load() {
+  // Calendly link
+  try { CALENDLY = (await (await fetch('/api/config')).json()).calendlyUrl || ''; } catch {}
+
+  const res = await fetch('/api/me');
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  const { user, project: p, invoices } = await res.json();
+  if (user.role === 'admin') { window.location.href = '/admin'; return; }
+
+  document.getElementById('hello').textContent = 'Hi ' + (user.name || 'there').split(' ')[0] + ' 👋';
+  document.getElementById('accEmail').textContent = user.email;
+
+  // status
+  document.getElementById('statStatus').textContent = p.status || 'Onboarding';
+
+  // url
+  const urlEl = document.getElementById('statUrl');
+  if (p.site_url) {
+    const href = p.site_url.startsWith('http') ? p.site_url : 'https://' + p.site_url;
+    urlEl.textContent = p.site_url.replace(/^https?:\/\//, '');
+    urlEl.href = href;
+  } else {
+    urlEl.textContent = 'Not live yet';
+    urlEl.removeAttribute('href');
+    urlEl.style.color = 'var(--txt-soft)';
+  }
+
+  // next payment
+  document.getElementById('statNext').firstChild.textContent = p.next_payment_date ? fmtDate(p.next_payment_date) : '—';
+  document.getElementById('statFee').textContent = p.monthly_fee ? ' · ' + money(p.monthly_fee, p.currency) + '/mo' : '';
+
+  // progress
+  const pct = Math.max(0, Math.min(100, p.progress || 0));
+  document.getElementById('pctText').textContent = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('pkgLine').textContent = p.site_name ? p.site_name : (p.package || 'Your website project');
+  document.getElementById('stageNote').textContent = p.stage_note || '';
+  document.getElementById('stageLabel').textContent = p.status || 'Progress';
+
+  // account panel
+  document.getElementById('accPkg').textContent = p.package || '—';
+  document.getElementById('accFee').textContent = p.monthly_fee ? money(p.monthly_fee, p.currency) + ' / month' : '—';
+  document.getElementById('accNext').textContent = p.next_payment_date ? fmtDate(p.next_payment_date) : '—';
+
+  // invoices
+  const body = document.getElementById('invBody');
+  if (!invoices.length) {
+    document.getElementById('invTable').hidden = true;
+    document.getElementById('invEmpty').hidden = false;
+  } else {
+    body.innerHTML = invoices.map((i) => `
+      <tr>
+        <td class="mono">${esc(i.number || '—')}</td>
+        <td>${esc(i.description || '—')}</td>
+        <td>${fmtDate(i.issued_date)}</td>
+        <td>${fmtDate(i.due_date)}</td>
+        <td>${money(i.amount, i.currency)}</td>
+        <td><span class="badge ${i.status}">${esc(i.status)}</span></td>
+        <td>${i.link ? `<a class="btn btn-ghost btn-sm" href="${esc(i.link)}" target="_blank" rel="noopener">View</a>` : ''}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('shell').hidden = false;
+}
+
+function goBook(e) {
+  if (e) e.preventDefault();
+  if (CALENDLY) window.open(CALENDLY, '_blank', 'noopener');
+  else window.location.href = '/#contact';
+}
+document.getElementById('bookBtn').addEventListener('click', goBook);
+document.getElementById('bookLink').addEventListener('click', goBook);
+
+document.getElementById('logoutLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+});
+
+load().catch(() => { window.location.href = '/login'; });
+</script>
+</body>
+</html>

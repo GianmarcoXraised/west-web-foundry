@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — West Web Foundry</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="logo" href="/"><span class="logo-mark">W</span><span class="logo-name">West Web Foundry · Admin</span></a>
+    <div class="appbar-right">
+      <a href="/">View site</a>
+      <a href="#" id="logoutLink">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<main class="shell" id="shell" hidden>
+  <div class="page-head">
+    <div><span class="eyebrow">Admin</span><h1>Clients &amp; enquiries</h1></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="clients" id="tabClientsBtn">Clients</button>
+    <button class="tab" data-tab="enquiries" id="tabEnquiriesBtn">Enquiries &amp; meetings</button>
+  </div>
+
+  <section id="tabClients">
+    <p class="muted" style="margin-bottom:18px">Clients create their own account at <span class="mono">/register</span>. Once they do, they appear here — set their site URL, progress, care fee, next payment date and add invoices. Everything saves to their portal instantly.</p>
+    <div id="clients"></div>
+    <p class="empty" id="clientsEmpty" hidden>No client accounts yet. Ask a client to register at /register, then refresh.</p>
+  </section>
+
+  <section id="tabEnquiries" hidden>
+    <div class="panel">
+      <h2>Incoming enquiries &amp; meeting requests</h2>
+      <p class="hint">Submitted from the contact form and "book a meeting" fallbacks.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>When</th><th>Type</th><th>Name</th><th>Email</th><th>Business</th><th>Package</th><th>Message</th></tr></thead>
+          <tbody id="enqBody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="enqEmpty" hidden>No enquiries yet.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="mini">West Web Foundry · Admin</footer>
+
+<template id="clientTpl">
+  <details class="admin-client">
+    <summary>
+      <span><span class="c-name"></span> <span class="muted c-email"></span></span>
+      <span class="badge neutral c-status">—</span>
+    </summary>
+    <div class="body">
+      <div class="msg ok c-msg"></div>
+      <h3 style="font-size:1rem;margin:14px 0 12px">Project</h3>
+      <form class="proj-form">
+        <div class="form-grid">
+          <label class="full">Site name / title<input name="site_name" placeholder="Joe's Plumbing website"></label>
+          <label class="full">Live URL<input name="site_url" placeholder="joesplumbing.com"></label>
+          <label>Package
+            <select name="package">
+              <option value="">—</option>
+              <option>Foundry Start</option>
+              <option>Foundry Growth</option>
+              <option>Foundry Commerce</option>
+              <option>Foundry Custom</option>
+            </select>
+          </label>
+          <label>Status
+            <select name="status">
+              <option>Onboarding</option>
+              <option>Design</option>
+              <option>Build</option>
+              <option>Review</option>
+              <option>Live</option>
+              <option>On hold</option>
+            </select>
+          </label>
+          <label>Progress %<input name="progress" type="number" min="0" max="100" step="5"></label>
+          <label>&nbsp;<span class="muted" style="font-weight:400">Drag not needed — type 0–100</span></label>
+          <label>Care fee (monthly)<input name="monthly_fee" type="number" min="0" step="1"></label>
+          <label>Currency
+            <select name="currency"><option>USD</option><option>GBP</option></select>
+          </label>
+          <label class="full">Next payment date<input name="next_payment_date" type="date"></label>
+          <label class="full">Progress note (shown to client)<textarea name="stage_note" rows="2" placeholder="Homepage design approved — building inner pages this week."></textarea></label>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-dark btn-sm" type="submit">Save project</button></div>
+      </form>
+
+      <h3 style="font-size:1rem;margin:26px 0 12px">Invoices</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+          <tbody class="inv-body"></tbody>
+        </table>
+      </div>
+      <form class="inv-form" style="margin-top:14px">
+        <div class="form-grid">
+          <label>Invoice #<input name="number" placeholder="INV-001"></label>
+          <label>Amount<input name="amount" type="number" min="0" step="0.01"></label>
+          <label>Currency<select name="currency"><option>USD</option><option>GBP</option></select></label>
+          <label>Status<select name="status"><option value="due">due</option><option value="paid">paid</option><option value="overdue">overdue</option></select></label>
+          <label>Issued<input name="issued_date" type="date"></label>
+          <label>Due<input name="due_date" type="date"></label>
+          <label class="full">Description<input name="description" placeholder="Foundry Growth — build fee"></label>
+          <label class="full">Link (optional PDF/Stripe)<input name="link" placeholder="https://…"></label>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-molten btn-sm" type="submit">Add invoice</button></div>
+      </form>
+    </div>
+  </details>
+</template>
+
+<script>
+const money = (amt, cur) => (cur === 'GBP' ? '£' : '$') + Number(amt || 0).toLocaleString();
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmtDate = (s) => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString(); };
+
+// tabs
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('tabClients').hidden = t.dataset.tab !== 'clients';
+  document.getElementById('tabEnquiries').hidden = t.dataset.tab !== 'enquiries';
+}));
+
+document.getElementById('logoutLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+});
+
+function renderInvRows(tbody, invoices) {
+  if (!invoices.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No invoices.</td></tr>'; return; }
+  tbody.innerHTML = invoices.map((i) => `
+    <tr>
+      <td class="mono">${esc(i.number || '—')}</td>
+      <td>${esc(i.description || '—')}</td>
+      <td>${money(i.amount, i.currency)}</td>
+      <td>${fmtDate(i.due_date)}</td>
+      <td><span class="badge ${i.status}">${esc(i.status)}</span></td>
+      <td class="row-actions">
+        ${i.status !== 'paid' ? `<button class="btn btn-ghost btn-sm" data-paid="${i.id}">Mark paid</button>` : ''}
+        <button class="btn btn-ghost btn-sm" data-del="${i.id}">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadClients() {
+  const res = await fetch('/api/admin/clients');
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  if (res.status === 403) { window.location.href = '/dashboard'; return; }
+  const { clients } = await res.json();
+  const wrap = document.getElementById('clients');
+  wrap.innerHTML = '';
+  document.getElementById('clientsEmpty').hidden = clients.length > 0;
+
+  const tpl = document.getElementById('clientTpl');
+  for (const c of clients) {
+    const node = tpl.content.cloneNode(true);
+    const root = node.querySelector('.admin-client');
+    node.querySelector('.c-name').textContent = c.user.name || '(no name)';
+    node.querySelector('.c-email').textContent = c.user.email;
+    node.querySelector('.c-status').textContent = c.project.status || 'Onboarding';
+
+    // fill project form
+    const pf = node.querySelector('.proj-form');
+    const p = c.project;
+    pf.site_name.value = p.site_name || '';
+    pf.site_url.value = p.site_url || '';
+    pf.package.value = p.package || '';
+    pf.status.value = p.status || 'Onboarding';
+    pf.progress.value = p.progress || 0;
+    pf.monthly_fee.value = p.monthly_fee || '';
+    pf.currency.value = p.currency || 'USD';
+    pf.next_payment_date.value = (p.next_payment_date || '').slice(0, 10);
+    pf.stage_note.value = p.stage_note || '';
+
+    const msg = node.querySelector('.c-msg');
+    pf.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(pf).entries());
+      const r = await fetch('/api/admin/project/' + c.user.id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      });
+      if (r.ok) { msg.textContent = 'Saved ✓'; msg.classList.add('show'); node.querySelector('.c-status'); setTimeout(loadClients, 700); }
+      else { msg.textContent = 'Save failed'; msg.classList.add('show'); }
+    });
+
+    // invoices
+    const invBody = node.querySelector('.inv-body');
+    renderInvRows(invBody, c.invoices);
+    invBody.addEventListener('click', async (e) => {
+      const paid = e.target.getAttribute('data-paid');
+      const del = e.target.getAttribute('data-del');
+      if (paid) { await fetch('/api/admin/invoices/' + paid, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paid' }) }); loadClients(); }
+      if (del) { await fetch('/api/admin/invoices/' + del, { method: 'DELETE' }); loadClients(); }
+    });
+
+    const invForm = node.querySelector('.inv-form');
+    invForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(invForm).entries());
+      payload.user_id = c.user.id;
+      const r = await fetch('/api/admin/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (r.ok) loadClients();
+    });
+
+    // keep panel open on reload by id
+    root.dataset.uid = c.user.id;
+    wrap.appendChild(node);
+  }
+}
+
+async function loadEnquiries() {
+  const res = await fetch('/api/admin/enquiries');
+  if (!res.ok) return;
+  const { enquiries } = await res.json();
+  const body = document.getElementById('enqBody');
+  document.getElementById('enqEmpty').hidden = enquiries.length > 0;
+  body.innerHTML = enquiries.map((e) => `
+    <tr>
+      <td class="muted">${fmtDate(e.created_at)}</td>
+      <td><span class="badge ${e.kind === 'meeting' ? 'due' : 'neutral'}">${esc(e.kind)}</span></td>
+      <td>${esc(e.name)}</td>
+      <td><a href="mailto:${esc(e.email)}" style="color:var(--copper)">${esc(e.email)}</a></td>
+      <td>${esc(e.business)}</td>
+      <td>${esc(e.package)}</td>
+      <td>${esc(e.message)}</td>
+    </tr>`).join('');
+}
+
+(async () => {
+  await loadClients();
+  await loadEnquiries();
+  document.getElementById('shell').hidden = false;
+})().catch(() => { window.location.href = '/login'; });
+</script>
+</body>
+</html>
