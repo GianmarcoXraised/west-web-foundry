@@ -23,24 +23,67 @@
 
 <main class="shell" id="shell" hidden>
   <div class="page-head">
-    <div><span class="eyebrow">Admin</span><h1>Clients &amp; enquiries</h1></div>
+    <div><span class="eyebrow">Superadmin</span><h1>Clients, calls &amp; enquiries</h1></div>
+  </div>
+
+  <!-- summary tiles -->
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="stat"><div class="k">Clients</div><div class="v" id="sumTotal">0</div></div>
+    <div class="stat"><div class="k">Fee overdue</div><div class="v" id="sumOverdue" style="color:var(--red)">0</div></div>
+    <div class="stat"><div class="k">Call requests pending</div><div class="v" id="sumPending" style="color:var(--copper)">0</div></div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="clients" id="tabClientsBtn">Clients</button>
-    <button class="tab" data-tab="enquiries" id="tabEnquiriesBtn">Enquiries &amp; meetings</button>
+    <button class="tab active" data-tab="clients">Clients</button>
+    <button class="tab" data-tab="calls">Call requests</button>
+    <button class="tab" data-tab="enquiries">Enquiries</button>
   </div>
 
+  <!-- CLIENTS -->
   <section id="tabClients">
-    <p class="muted" style="margin-bottom:18px">Clients create their own account at <span class="mono">/register</span>. Once they do, they appear here — set their site URL, progress, care fee, next payment date and add invoices. Everything saves to their portal instantly.</p>
+    <details class="admin-client" style="margin-bottom:20px">
+      <summary><span>➕ Create a new client account</span></summary>
+      <div class="body">
+        <div class="msg ok" id="newMsg"></div>
+        <form id="newUserForm">
+          <div class="form-grid">
+            <label>Name<input name="name" required placeholder="Maria Rossi"></label>
+            <label>Email<input name="email" type="email" required placeholder="maria@business.com"></label>
+            <label>Temporary password<input name="password" required minlength="8" placeholder="min 8 characters"></label>
+            <label>Package
+              <select name="package">
+                <option value="">—</option>
+                <option>Foundry Start</option>
+                <option>Foundry Growth</option>
+                <option>Foundry Commerce</option>
+              </select>
+            </label>
+          </div>
+          <div style="margin-top:14px"><button class="btn btn-molten btn-sm" type="submit">Create client</button></div>
+        </form>
+      </div>
+    </details>
+
+    <p class="muted" style="margin-bottom:18px">Clients also self-register at <span class="mono">/register</span>. Set their site URL, progress, care fee, next payment date and invoices — everything saves to their portal instantly.</p>
     <div id="clients"></div>
-    <p class="empty" id="clientsEmpty" hidden>No client accounts yet. Ask a client to register at /register, then refresh.</p>
+    <p class="empty" id="clientsEmpty" hidden>No client accounts yet.</p>
   </section>
 
+  <!-- CALL REQUESTS -->
+  <section id="tabCalls" hidden>
+    <div class="panel">
+      <h2>Call requests</h2>
+      <p class="hint">Clients ask for a call and say why. Approve to let them book (they're emailed a scheduling link), or decline with a reason. Either way the client gets an email.</p>
+      <div id="callReqs"></div>
+      <p class="empty" id="callReqsEmpty" hidden>No call requests yet.</p>
+    </div>
+  </section>
+
+  <!-- ENQUIRIES -->
   <section id="tabEnquiries" hidden>
     <div class="panel">
-      <h2>Incoming enquiries &amp; meeting requests</h2>
-      <p class="hint">Submitted from the contact form and "book a meeting" fallbacks.</p>
+      <h2>Incoming enquiries</h2>
+      <p class="hint">Submitted from the public contact form.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>When</th><th>Type</th><th>Name</th><th>Email</th><th>Business</th><th>Package</th><th>Message</th></tr></thead>
@@ -58,41 +101,38 @@
   <details class="admin-client">
     <summary>
       <span><span class="c-name"></span> <span class="muted c-email"></span></span>
-      <span class="badge neutral c-status">—</span>
+      <span style="display:flex;gap:8px;align-items:center">
+        <span class="badge overdue c-overdue" hidden>Fee overdue</span>
+        <span class="badge neutral c-status">—</span>
+      </span>
     </summary>
     <div class="body">
       <div class="msg ok c-msg"></div>
       <h3 style="font-size:1rem;margin:14px 0 12px">Project</h3>
       <form class="proj-form">
         <div class="form-grid">
-          <label class="full">Site name / title<input name="site_name" placeholder="Joe's Plumbing website"></label>
-          <label class="full">Live URL<input name="site_url" placeholder="joesplumbing.com"></label>
+          <label class="full">Site name / title<input name="site_name" placeholder="Maria's shop website"></label>
+          <label class="full">Live URL<input name="site_url" placeholder="mariashop.com"></label>
           <label>Package
             <select name="package">
               <option value="">—</option>
               <option>Foundry Start</option>
               <option>Foundry Growth</option>
               <option>Foundry Commerce</option>
-              <option>Foundry Custom</option>
             </select>
           </label>
           <label>Status
             <select name="status">
-              <option>Onboarding</option>
-              <option>Design</option>
-              <option>Build</option>
-              <option>Review</option>
-              <option>Live</option>
-              <option>On hold</option>
+              <option>Onboarding</option><option>Design</option><option>Build</option>
+              <option>Review</option><option>Live</option><option>On hold</option>
             </select>
           </label>
           <label>Progress %<input name="progress" type="number" min="0" max="100" step="5"></label>
-          <label>&nbsp;<span class="muted" style="font-weight:400">Drag not needed — type 0–100</span></label>
           <label>Care fee (monthly)<input name="monthly_fee" type="number" min="0" step="1"></label>
           <label>Currency
-            <select name="currency"><option>USD</option><option>GBP</option></select>
+            <select name="currency"><option>USD</option><option>GBP</option><option>EUR</option></select>
           </label>
-          <label class="full">Next payment date<input name="next_payment_date" type="date"></label>
+          <label>Next payment date<input name="next_payment_date" type="date"></label>
           <label class="full">Progress note (shown to client)<textarea name="stage_note" rows="2" placeholder="Homepage design approved — building inner pages this week."></textarea></label>
         </div>
         <div style="margin-top:14px"><button class="btn btn-dark btn-sm" type="submit">Save project</button></div>
@@ -109,7 +149,7 @@
         <div class="form-grid">
           <label>Invoice #<input name="number" placeholder="INV-001"></label>
           <label>Amount<input name="amount" type="number" min="0" step="0.01"></label>
-          <label>Currency<select name="currency"><option>USD</option><option>GBP</option></select></label>
+          <label>Currency<select name="currency"><option>USD</option><option>GBP</option><option>EUR</option></select></label>
           <label>Status<select name="status"><option value="due">due</option><option value="paid">paid</option><option value="overdue">overdue</option></select></label>
           <label>Issued<input name="issued_date" type="date"></label>
           <label>Due<input name="due_date" type="date"></label>
@@ -118,12 +158,21 @@
         </div>
         <div style="margin-top:14px"><button class="btn btn-molten btn-sm" type="submit">Add invoice</button></div>
       </form>
+
+      <h3 style="font-size:1rem;margin:26px 0 12px">Reset password</h3>
+      <form class="pw-form">
+        <div class="form-grid">
+          <label class="full">New password<input name="password" minlength="8" placeholder="min 8 characters"></label>
+        </div>
+        <div style="margin-top:12px"><button class="btn btn-ghost btn-sm" type="submit">Set new password</button></div>
+      </form>
     </div>
   </details>
 </template>
 
 <script>
-const money = (amt, cur) => (cur === 'GBP' ? '£' : '$') + Number(amt || 0).toLocaleString();
+const SYM = { USD: '$', GBP: '£', EUR: '€' };
+const money = (amt, cur) => (SYM[cur] || '$') + Number(amt || 0).toLocaleString();
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmtDate = (s) => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString(); };
 
@@ -132,6 +181,7 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
   document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
   t.classList.add('active');
   document.getElementById('tabClients').hidden = t.dataset.tab !== 'clients';
+  document.getElementById('tabCalls').hidden = t.dataset.tab !== 'calls';
   document.getElementById('tabEnquiries').hidden = t.dataset.tab !== 'enquiries';
 }));
 
@@ -139,6 +189,18 @@ document.getElementById('logoutLink').addEventListener('click', async (e) => {
   e.preventDefault();
   await fetch('/api/auth/logout', { method: 'POST' });
   window.location.href = '/';
+});
+
+// create client
+document.getElementById('newUserForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const msg = document.getElementById('newMsg');
+  const payload = Object.fromEntries(new FormData(form).entries());
+  const r = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (r.ok) { msg.textContent = 'Client created ✓'; msg.className = 'msg ok show'; form.reset(); loadClients(); }
+  else { msg.textContent = data.error || 'Could not create client'; msg.className = 'msg err show'; }
 });
 
 function renderInvRows(tbody, invoices) {
@@ -161,7 +223,11 @@ async function loadClients() {
   const res = await fetch('/api/admin/clients');
   if (res.status === 401) { window.location.href = '/login'; return; }
   if (res.status === 403) { window.location.href = '/dashboard'; return; }
-  const { clients } = await res.json();
+  const { clients, summary } = await res.json();
+  document.getElementById('sumTotal').textContent = summary.total;
+  document.getElementById('sumOverdue').textContent = summary.overdue;
+  document.getElementById('sumPending').textContent = summary.pendingCalls;
+
   const wrap = document.getElementById('clients');
   wrap.innerHTML = '';
   document.getElementById('clientsEmpty').hidden = clients.length > 0;
@@ -169,12 +235,11 @@ async function loadClients() {
   const tpl = document.getElementById('clientTpl');
   for (const c of clients) {
     const node = tpl.content.cloneNode(true);
-    const root = node.querySelector('.admin-client');
     node.querySelector('.c-name').textContent = c.user.name || '(no name)';
     node.querySelector('.c-email').textContent = c.user.email;
     node.querySelector('.c-status').textContent = c.project.status || 'Onboarding';
+    if (c.overdue) node.querySelector('.c-overdue').hidden = false;
 
-    // fill project form
     const pf = node.querySelector('.proj-form');
     const p = c.project;
     pf.site_name.value = p.site_name || '';
@@ -191,14 +256,11 @@ async function loadClients() {
     pf.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = Object.fromEntries(new FormData(pf).entries());
-      const r = await fetch('/api/admin/project/' + c.user.id, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-      });
-      if (r.ok) { msg.textContent = 'Saved ✓'; msg.classList.add('show'); node.querySelector('.c-status'); setTimeout(loadClients, 700); }
-      else { msg.textContent = 'Save failed'; msg.classList.add('show'); }
+      const r = await fetch('/api/admin/project/' + c.user.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (r.ok) { msg.textContent = 'Saved ✓'; msg.className = 'msg ok show'; setTimeout(loadClients, 700); }
+      else { msg.textContent = 'Save failed'; msg.className = 'msg err show'; }
     });
 
-    // invoices
     const invBody = node.querySelector('.inv-body');
     renderInvRows(invBody, c.invoices);
     invBody.addEventListener('click', async (e) => {
@@ -217,10 +279,61 @@ async function loadClients() {
       if (r.ok) loadClients();
     });
 
-    // keep panel open on reload by id
-    root.dataset.uid = c.user.id;
+    const pwForm = node.querySelector('.pw-form');
+    pwForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = pwForm.password.value;
+      const r = await fetch('/api/admin/users/' + c.user.id + '/password', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+      const data = await r.json();
+      if (r.ok) { msg.textContent = 'Password updated ✓'; msg.className = 'msg ok show'; pwForm.reset(); }
+      else { msg.textContent = data.error || 'Could not update password'; msg.className = 'msg err show'; }
+    });
+
     wrap.appendChild(node);
   }
+}
+
+async function loadCalls() {
+  const res = await fetch('/api/admin/call-requests');
+  if (!res.ok) return;
+  const { callRequests } = await res.json();
+  const wrap = document.getElementById('callReqs');
+  document.getElementById('callReqsEmpty').hidden = callRequests.length > 0;
+  const badge = { pending: 'due', approved: 'paid', declined: 'overdue' };
+  wrap.innerHTML = '';
+  for (const r of callRequests) {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div><strong>${esc(r.client ? r.client.name : 'Unknown')}</strong> <span class="muted">${esc(r.client ? r.client.email : '')}</span></div>
+        <span class="badge ${badge[r.status] || 'neutral'}">${esc(r.status)}</span>
+      </div>
+      <p style="margin:10px 0 6px">${esc(r.reason)}</p>
+      ${r.preferred ? `<p class="muted" style="font-size:.86rem">Preferred: ${esc(r.preferred)}</p>` : ''}
+      <p class="muted mono" style="font-size:.76rem">${fmtDate(r.created_at)}</p>
+      ${r.admin_note ? `<p class="muted" style="margin-top:8px"><strong>Your note:</strong> ${esc(r.admin_note)}</p>` : ''}
+    `;
+    if (r.status === 'pending') {
+      const actions = document.createElement('div');
+      actions.style.marginTop = '12px';
+      actions.innerHTML = `
+        <textarea class="note" rows="2" placeholder="Optional note to the client (sent by email)" style="width:100%;font-family:var(--body);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);margin-bottom:10px"></textarea>
+        <div class="row-actions">
+          <button class="btn btn-molten btn-sm" data-approve>Approve &amp; send link</button>
+          <button class="btn btn-ghost btn-sm" data-decline>Decline</button>
+        </div>`;
+      actions.querySelector('[data-approve]').addEventListener('click', () => decide(r.id, 'approved', actions.querySelector('.note').value));
+      actions.querySelector('[data-decline]').addEventListener('click', () => decide(r.id, 'declined', actions.querySelector('.note').value));
+      div.appendChild(actions);
+    }
+    wrap.appendChild(div);
+  }
+}
+
+async function decide(id, status, note) {
+  const r = await fetch('/api/admin/call-requests/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, note }) });
+  if (r.ok) { loadCalls(); loadClients(); }
 }
 
 async function loadEnquiries() {
@@ -243,6 +356,7 @@ async function loadEnquiries() {
 
 (async () => {
   await loadClients();
+  await loadCalls();
   await loadEnquiries();
   document.getElementById('shell').hidden = false;
 })().catch(() => { window.location.href = '/login'; });

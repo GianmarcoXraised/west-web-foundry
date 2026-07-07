@@ -15,7 +15,7 @@
   <div class="appbar-inner">
     <a class="logo" href="/"><span class="logo-mark">W</span><span class="logo-name">West Web Foundry</span></a>
     <div class="appbar-right">
-      <a href="#" id="bookLink">Book a meeting</a>
+      <a href="#book" id="bookLink">Request a call</a>
       <a href="#" id="logoutLink">Sign out</a>
     </div>
   </div>
@@ -27,7 +27,7 @@
       <span class="eyebrow">Client portal</span>
       <h1 id="hello">Your project</h1>
     </div>
-    <a class="btn btn-molten btn-sm" href="#" id="bookBtn">Book a meeting</a>
+    <a class="btn btn-molten btn-sm" href="#book" id="bookBtn">Request a call</a>
   </div>
 
   <!-- stat tiles -->
@@ -71,11 +71,38 @@
           <tr><th style="border:none">Account email</th><td style="border:none" id="accEmail">—</td></tr>
         </tbody>
       </table>
-      <p class="muted" style="margin-top:16px">Need a change to your site? Email
-        <a href="mailto:hello@westwebfoundry.com" style="color:var(--copper)">hello@westwebfoundry.com</a>
-        or book a call above.</p>
+      <p class="muted" style="margin-top:16px">Need a quick change to your site? Email
+        <a href="mailto:hello@west-web-foundry.com" style="color:var(--copper)">hello@west-web-foundry.com</a>
+        or request a call below.</p>
     </section>
   </div>
+
+  <!-- request a call -->
+  <section class="panel" id="book" style="margin-top:22px">
+    <h2>Talk to your account manager</h2>
+    <p class="hint">Request a call and tell us what it's about. Your account manager reviews every request personally and comes back to you by email — usually within one business day.</p>
+
+    <div class="grid grid-2" style="align-items:start">
+      <form id="callForm">
+        <div class="msg err" id="callMsg" style="margin-bottom:14px"></div>
+        <div class="field">
+          <label for="reason">What would you like to talk about?</label>
+          <textarea id="reason" name="reason" rows="4" required placeholder="e.g. I'd like to add an online booking system and discuss timing."></textarea>
+        </div>
+        <div class="field">
+          <label for="preferred">Preferred time <span class="muted" style="font-weight:400">(optional)</span></label>
+          <input type="text" id="preferred" name="preferred" placeholder="e.g. weekday mornings, or a specific date">
+        </div>
+        <button type="submit" class="btn btn-molten" id="callSubmit">Request a call</button>
+      </form>
+
+      <div>
+        <h3 style="font-size:1rem;margin-bottom:12px">Your requests</h3>
+        <div id="callList"></div>
+        <p class="empty" id="callEmpty" hidden>No call requests yet.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- invoices -->
   <section class="panel" style="margin-top:22px">
@@ -96,10 +123,8 @@
 <footer class="mini">West Web Foundry · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
 
 <script>
-const money = (amt, cur) => {
-  const sym = cur === 'GBP' ? '£' : '$';
-  return sym + Number(amt || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-};
+const SYM = { USD: '$', GBP: '£', EUR: '€' };
+const money = (amt, cur) => (SYM[cur] || '$') + Number(amt || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmtDate = (s) => {
   if (!s) return '—';
@@ -109,22 +134,35 @@ const fmtDate = (s) => {
 
 let CALENDLY = '';
 
+function renderCalls(list) {
+  const wrap = document.getElementById('callList');
+  document.getElementById('callEmpty').hidden = list.length > 0;
+  const label = { pending: 'Pending review', approved: 'Approved', declined: 'Not scheduled' };
+  const badge = { pending: 'due', approved: 'paid', declined: 'overdue' };
+  wrap.innerHTML = list.map((r) => `
+    <div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span class="muted mono" style="font-size:.78rem">${fmtDate(r.created_at)}</span>
+        <span class="badge ${badge[r.status] || 'neutral'}">${esc(label[r.status] || r.status)}</span>
+      </div>
+      <p style="margin-top:8px;font-size:.92rem">${esc(r.reason)}</p>
+      ${r.admin_note ? `<p class="muted" style="margin-top:8px;font-size:.86rem"><strong>Reply:</strong> ${esc(r.admin_note)}</p>` : ''}
+      ${r.status === 'approved' && CALENDLY ? `<a class="btn btn-molten btn-sm" href="${esc(CALENDLY)}" target="_blank" rel="noopener" style="margin-top:10px">Book your time →</a>` : ''}
+    </div>`).join('');
+}
+
 async function load() {
-  // Calendly link
   try { CALENDLY = (await (await fetch('/api/config')).json()).calendlyUrl || ''; } catch {}
 
   const res = await fetch('/api/me');
   if (res.status === 401) { window.location.href = '/login'; return; }
-  const { user, project: p, invoices } = await res.json();
+  const { user, project: p, invoices, callRequests } = await res.json();
   if (user.role === 'admin') { window.location.href = '/admin'; return; }
 
   document.getElementById('hello').textContent = 'Hi ' + (user.name || 'there').split(' ')[0] + ' 👋';
   document.getElementById('accEmail').textContent = user.email;
-
-  // status
   document.getElementById('statStatus').textContent = p.status || 'Onboarding';
 
-  // url
   const urlEl = document.getElementById('statUrl');
   if (p.site_url) {
     const href = p.site_url.startsWith('http') ? p.site_url : 'https://' + p.site_url;
@@ -136,11 +174,9 @@ async function load() {
     urlEl.style.color = 'var(--txt-soft)';
   }
 
-  // next payment
   document.getElementById('statNext').firstChild.textContent = p.next_payment_date ? fmtDate(p.next_payment_date) : '—';
   document.getElementById('statFee').textContent = p.monthly_fee ? ' · ' + money(p.monthly_fee, p.currency) + '/mo' : '';
 
-  // progress
   const pct = Math.max(0, Math.min(100, p.progress || 0));
   document.getElementById('pctText').textContent = pct + '%';
   document.getElementById('progressBar').style.width = pct + '%';
@@ -148,12 +184,12 @@ async function load() {
   document.getElementById('stageNote').textContent = p.stage_note || '';
   document.getElementById('stageLabel').textContent = p.status || 'Progress';
 
-  // account panel
   document.getElementById('accPkg').textContent = p.package || '—';
   document.getElementById('accFee').textContent = p.monthly_fee ? money(p.monthly_fee, p.currency) + ' / month' : '—';
   document.getElementById('accNext').textContent = p.next_payment_date ? fmtDate(p.next_payment_date) : '—';
 
-  // invoices
+  renderCalls(callRequests || []);
+
   const body = document.getElementById('invBody');
   if (!invoices.length) {
     document.getElementById('invTable').hidden = true;
@@ -174,13 +210,34 @@ async function load() {
   document.getElementById('shell').hidden = false;
 }
 
-function goBook(e) {
-  if (e) e.preventDefault();
-  if (CALENDLY) window.open(CALENDLY, '_blank', 'noopener');
-  else window.location.href = '/#contact';
-}
-document.getElementById('bookBtn').addEventListener('click', goBook);
-document.getElementById('bookLink').addEventListener('click', goBook);
+// submit a call request
+document.getElementById('callForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('callMsg');
+  const btn = document.getElementById('callSubmit');
+  msg.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const r = await fetch('/api/call-requests', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reason: document.getElementById('reason').value,
+        preferred: document.getElementById('preferred').value,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Could not send your request.');
+    document.getElementById('callForm').reset();
+    await load();
+    msg.textContent = "Request sent — your account manager will reply by email.";
+    msg.className = 'msg ok show';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'msg err show';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Request a call';
+  }
+});
 
 document.getElementById('logoutLink').addEventListener('click', async (e) => {
   e.preventDefault();

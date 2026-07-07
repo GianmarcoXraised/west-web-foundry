@@ -6,8 +6,8 @@
 const SITE = {
   name: 'West Web Foundry',
   tagline: 'Websites cast to last — designed, built and cared for by real people.',
-  baseUrl: process.env.SITE_URL || 'https://westwebfoundry.com',
-  email: 'hello@westwebfoundry.com',
+  baseUrl: process.env.SITE_URL || 'https://west-web-foundry.com',
+  email: 'hello@west-web-foundry.com',
   founded: '2026',
 };
 

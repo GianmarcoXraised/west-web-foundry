@@ -16,7 +16,7 @@ const DB_PATH = process.env.DATABASE_PATH
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
-const empty = { users: [], projects: [], invoices: [], enquiries: [], seq: 0 };
+const empty = { users: [], projects: [], invoices: [], enquiries: [], callRequests: [], seq: 0 };
 let data;
 
 function read() {
@@ -62,6 +62,11 @@ const users = {
   setRole: (id, role) => {
     const u = users.findById(id);
     if (u) { u.role = role; write(); }
+  },
+  updatePassword: (id, password_hash) => {
+    const u = users.findById(id);
+    if (u) { u.password_hash = password_hash; write(); }
+    return u;
   },
 };
 
@@ -135,6 +140,26 @@ const enquiries = {
     [...data.enquiries].sort((a, b) => b.id - a.id).slice(0, limit),
 };
 
+/* ------------------------- call requests (tickets) ------------------------- */
+const callRequests = {
+  create: (r) => {
+    const row = { id: nextId(), status: 'pending', admin_note: '', created_at: now(), ...r };
+    data.callRequests.push(row);
+    write();
+    return row;
+  },
+  findById: (id) => data.callRequests.find((r) => r.id === Number(id)) || null,
+  listByUser: (userId) =>
+    data.callRequests.filter((r) => r.user_id === Number(userId)).sort((a, b) => b.id - a.id),
+  listAll: () => [...data.callRequests].sort((a, b) => b.id - a.id),
+  update: (id, fields) => {
+    const row = callRequests.findById(id);
+    if (row) { Object.assign(row, fields); write(); }
+    return row;
+  },
+  pendingCount: () => data.callRequests.filter((r) => r.status === 'pending').length,
+};
+
 /* ------------------------- seed admin ------------------------- */
 function seedAdmin() {
   const email = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -152,4 +177,4 @@ function seedAdmin() {
 }
 seedAdmin();
 
-module.exports = { bcrypt, DB_PATH, users, projects, invoices, enquiries };
+module.exports = { bcrypt, DB_PATH, users, projects, invoices, enquiries, callRequests };

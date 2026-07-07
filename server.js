@@ -6,7 +6,8 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const { bcrypt, users, projects, invoices, enquiries } = require('./db');
+const { bcrypt, users, projects, invoices, enquiries, callRequests } = require('./db');
+const mailer = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,7 +60,19 @@ function requireAdmin(req, res, next) {
 
 const isEmail = (s) => typeof s === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 const clampProgress = (n) => Math.max(0, Math.min(100, parseInt(n, 10) || 0));
-const cur = (c) => (String(c || 'USD').toUpperCase() === 'GBP' ? 'GBP' : 'USD');
+const cur = (c) => {
+  const v = String(c || 'USD').toUpperCase();
+  return ['USD', 'GBP', 'EUR'].includes(v) ? v : 'USD';
+};
+
+// A client's monthly care fee is "overdue" when their next payment date is in the past,
+// or when they have an invoice explicitly marked overdue.
+function isOverdue(userId) {
+  const p = projects.get(userId);
+  const today = new Date().toISOString().slice(0, 10);
+  if (p.next_payment_date && p.next_payment_date.slice(0, 10) < today) return true;
+  return invoices.listByUser(userId).some((i) => i.status === 'overdue');
+}
 
 /* --------------------------- public API --------------------------- */
 
@@ -126,7 +139,38 @@ app.get('/api/me', requireAuth, (req, res) => {
     user: publicUser(req.user),
     project: projects.get(req.user.id),
     invoices: invoices.listByUser(req.user.id),
+    callRequests: callRequests.listByUser(req.user.id),
   });
+});
+
+/* --------------------------- call requests (client) --------------------------- */
+
+app.post('/api/call-requests', requireAuth, async (req, res) => {
+  const reason = String((req.body || {}).reason || '').trim();
+  const preferred = String((req.body || {}).preferred || '').slice(0, 120);
+  if (reason.length < 10) {
+    return res.status(400).json({ error: 'Please tell us a bit more about why you\'d like a call (at least 10 characters).' });
+  }
+  // Rate-limit: one pending request at a time.
+  const hasPending = callRequests.listByUser(req.user.id).some((r) => r.status === 'pending');
+  if (hasPending) {
+    return res.status(409).json({ error: 'You already have a call request pending review. We\'ll be in touch shortly.' });
+  }
+  const request = callRequests.create({
+    user_id: req.user.id,
+    reason: reason.slice(0, 2000),
+    preferred,
+  });
+  // Notify the admin (best-effort; never blocks the response on email failure).
+  mailer
+    .notifyNewCallRequest({
+      client: { name: req.user.name, email: req.user.email },
+      reason: request.reason,
+      preferred: request.preferred,
+      dashboardUrl: (process.env.SITE_URL || SITE.baseUrl) + '/admin',
+    })
+    .catch(() => {});
+  res.json({ ok: true, request });
 });
 
 /* --------------------------- admin API --------------------------- */
@@ -137,8 +181,78 @@ app.get('/api/admin/clients', requireAdmin, (req, res) => {
     created_at: c.created_at,
     project: projects.get(c.id),
     invoices: invoices.listByUser(c.id),
+    overdue: isOverdue(c.id),
   }));
-  res.json({ clients });
+  res.json({
+    clients,
+    summary: {
+      total: clients.length,
+      overdue: clients.filter((c) => c.overdue).length,
+      pendingCalls: callRequests.pendingCount(),
+    },
+  });
+});
+
+// Superadmin: create a client account directly.
+app.post('/api/admin/users', requireAdmin, (req, res) => {
+  const { name = '', email = '', password = '', package: pkg = '' } = req.body || {};
+  if (!String(name).trim()) return res.status(400).json({ error: 'Name is required.' });
+  if (!isEmail(email)) return res.status(400).json({ error: 'A valid email is required.' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  if (users.findByEmail(email)) return res.status(409).json({ error: 'An account with that email already exists.' });
+
+  const user = users.create({
+    email,
+    password_hash: bcrypt.hashSync(String(password), 10),
+    name: String(name).slice(0, 120),
+    role: 'client',
+  });
+  const project = projects.get(user.id);
+  if (pkg) projects.update(user.id, { package: String(pkg).slice(0, 120) });
+  res.json({ ok: true, user: publicUser(user), project });
+});
+
+// Superadmin: change any user's password.
+app.put('/api/admin/users/:id/password', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const target = users.findById(id);
+  if (!target) return res.status(404).json({ error: 'User not found.' });
+  const password = String((req.body || {}).password || '');
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  users.updatePassword(id, bcrypt.hashSync(password, 10));
+  res.json({ ok: true });
+});
+
+/* --------------------------- call requests (admin) --------------------------- */
+
+app.get('/api/admin/call-requests', requireAdmin, (req, res) => {
+  const list = callRequests.listAll().map((r) => {
+    const u = users.findById(r.user_id);
+    return { ...r, client: u ? { id: u.id, name: u.name, email: u.email } : null };
+  });
+  res.json({ callRequests: list });
+});
+
+app.put('/api/admin/call-requests/:id', requireAdmin, async (req, res) => {
+  const request = callRequests.findById(req.params.id);
+  if (!request) return res.status(404).json({ error: 'Request not found.' });
+  const status = ['approved', 'declined'].includes((req.body || {}).status) ? req.body.status : null;
+  if (!status) return res.status(400).json({ error: 'Status must be approved or declined.' });
+  const note = String((req.body || {}).note || '').slice(0, 2000);
+
+  callRequests.update(request.id, { status, admin_note: note, decided_at: new Date().toISOString() });
+  const client = users.findById(request.user_id);
+  if (client) {
+    mailer
+      .notifyCallDecision({
+        client: { name: client.name, email: client.email },
+        status,
+        note,
+        calendlyUrl: process.env.CALENDLY_URL || '',
+      })
+      .catch(() => {});
+  }
+  res.json({ ok: true, emailed: mailer.smtpConfigured });
 });
 
 app.put('/api/admin/project/:userId', requireAdmin, (req, res) => {
