@@ -20,6 +20,7 @@ h1,h2,h3{font-family:var(--display);line-height:1.12;letter-spacing:-.01em;color
 .appbar-inner{max-width:1120px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:11px;text-decoration:none}
 .logo-mark{width:32px;height:32px;border-radius:7px;background:linear-gradient(150deg,var(--molten-1),var(--molten-2));display:grid;place-items:center;font-family:var(--display);font-weight:700;color:#fff}
+.logo-img{width:34px;height:34px;border-radius:9px;display:block}
 .logo-name{font-family:var(--display);font-weight:700;color:var(--txt-inv);font-size:1.05rem}
 .appbar-right{display:flex;align-items:center;gap:18px}
 .appbar-right a{color:var(--txt-inv-soft);text-decoration:none;font-size:.9rem;font-weight:500}

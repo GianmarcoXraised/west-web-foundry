@@ -37,7 +37,7 @@ function navHtml(active) {
 <header class="nav" id="siteNav">
   <div class="wrap nav-inner">
     <a class="logo" href="/" aria-label="${esc(SITE.name)} home">
-      <span class="logo-mark" aria-hidden="true">W</span>
+      <img class="logo-img" src="/logo.svg" alt="" width="40" height="40">
       <span class="logo-name">West Web Foundry</span>
     </a>
     <nav class="nav-links" id="navLinks" aria-label="Primary">
@@ -63,7 +63,7 @@ function footerHtml() {
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-brand">
-        <a class="logo" href="/"><span class="logo-mark" aria-hidden="true">W</span><span class="logo-name">West Web Foundry</span></a>
+        <a class="logo" href="/"><img class="logo-img" src="/logo.svg" alt="" width="40" height="40"><span class="logo-name">West Web Foundry</span></a>
         <p>Websites cast to last — designed, built and cared for by real people. One upfront price, one small monthly fee, a named human who looks after everything.</p>
         <a class="btn btn-molten" href="/book">Book a free call</a>
       </div>
@@ -123,6 +123,7 @@ function layout(opts) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/css/site.css">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB86B"/><stop offset="1" stop-color="#E4560A"/></linearGradient></defs></svg>
 ${jsonldTags}
